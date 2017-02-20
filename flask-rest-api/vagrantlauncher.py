@@ -1,7 +1,8 @@
 import sys
 import subprocess
 import shlex 
-import commander
+import logging
+from logging.handlers import RotatingFileHandler
 
 class VagrantManager:
     def __init__(self):
@@ -22,18 +23,69 @@ class VagrantManager:
           if(len(values) == 5):
               temp.append(VagrantBox(values[0],values[1],values[2],values[3],values[4]))
       self.ListOfBoxes = temp
+
       
     def getListOfBoxes(self):
         self.listBoxes()
-        temp = []
-        boxes = {}
-        [temp.append({'ID': box.ID, 'name':box.name, 'state': box.state, 'directory': box.directory, 'provider': box.provider}) for box in self.ListOfBoxes]
-        boxes['boxes'] = temp
+        boxes = []
+        [boxes.append({'ID': box.ID, 'name':box.name, 'state': box.state, 'directory': box.directory, 'provider': box.provider}) for box in self.ListOfBoxes]
         return boxes
     
-    def upBox(self, ID):
-        c = Commander
-        c.executeCommand("vagrant  up " + ID)  
+    def getBox(self, ID): 
+        self.listBoxes()
+        boxes = self.ListOfBoxes
+        for box in boxes: 
+             if box.ID == ID:
+                 return box   
+    
+    def boxExists(self, ID): 
+        self.listBoxes()
+        boxes = self.ListOfBoxes
+        for box in boxes: 
+             if box.ID == ID:
+                 return True 
+             else: 
+                 return False   
+    
+    def upBox(self, box):
+        c = Commander()
+        dir = box.directory
+        if "windows" in c.os:
+            #todo: code in to replace the path stuff for windows
+            print("test")
+        
+        print("cd " + box.directory + " && vagrant up " + box.ID)
+        c.executeCommand("vagrant up " + box.ID)  
+        return "done"
+
+    def provisionBox(self, box):
+        c = Commander() 
+        dir = box.directory
+        if "windows" in c.os:
+            #todo: put code in to replace the path stuff
+            print("test")
+
+        c.executeCommand("vagrant provision " + box.ID)  
+        return "done"
+    
+    def haltBox(self, box):
+        c = Commander()
+        dir = box.directory
+        if "windows" in c.os:
+            #todo: put code in to replace the path stuff
+            print("test")
+
+        c.executeCommand("vagrant halt " + box.ID)  
+        return "done"
+
+    def destroyBox(self, box):
+        c = Commander()
+        dir = box.directory
+        if "windows" in c.os:
+            #todo: put code in to replace the path stuff
+            print("test")
+
+        c.executeCommand("vagrant destroy " + box.ID)  
         return "done"
   
 class VagrantBox: 
@@ -50,7 +102,9 @@ class Commander:
 
     def executeCommand(self, command):
         arr = []
-        if self.os == "darwin":
+        if "darwin" in self.os:
+            print("just before executing command")
+            print(command)
             process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
             while True:
                 output = process.stdout.readline().decode()
@@ -58,8 +112,9 @@ class Commander:
                     break
                 if output:
                     arr.append(output)
+                    print(output)
             rc = process.poll()
-        if "win" in self.os:
+        if "windows" in self.os:
             process = subprocess.Popen('cmd.exe /C ' + command, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
             while True:
                 output = process.stdout.readline().decode()
